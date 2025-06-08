@@ -1,5 +1,5 @@
-# Dependencies
-node_modules/
+# Dependencies (временно закомментировано для загрузки в репозиторий)
+# node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
