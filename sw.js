@@ -1,5 +1,5 @@
-const CACHE_NAME = 'fleet-monitor-pro-v2.2.5';
-const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.2.5';
+const CACHE_NAME = 'fleet-monitor-pro-v2.3.0';
+const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.0';
 
 // Static files to cache
 const STATIC_FILES = [
