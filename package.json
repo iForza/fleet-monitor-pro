@@ -1,0 +1,70 @@
+{
+  "name": "fleet-monitor-pro",
+  "version": "2.2.5",
+  "description": "Advanced Fleet Monitor Pro for ESP32 vehicles with real-time tracking, analytics, and authentication",
+  "main": "index.html",
+  "scripts": {
+    "start": "npm run serve",
+    "serve": "http-server . -p 3000 -c-1",
+    "build": "echo 'No build step required for static site' && exit 0",
+    "deploy:vercel": "vercel",
+    "deploy:netlify": "netlify deploy --prod --dir .",
+    "test": "echo 'No tests specified' && exit 0",
+    "lint": "echo 'No linting configured' && exit 0",
+    "validate": "html-validate index.html && echo 'HTML validation passed'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iForza/fleet-monitor-pro.git"
+  },
+  "keywords": [
+    "mqtt",
+    "esp32",
+    "iot",
+    "fleet",
+    "monitoring",
+    "real-time",
+    "websocket",
+    "javascript",
+    "leaflet",
+    "maps",
+    "esri",
+    "osm",
+    "pwa",
+    "authentication",
+    "analytics",
+    "charts",
+    "vehicle-tracking",
+    "automotive",
+    "telematics",
+    "dashboard"
+  ],
+  "author": "iForza",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iForza/fleet-monitor-pro/issues"
+  },
+  "homepage": "https://github.com/iForza/fleet-monitor-pro#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "html-validate": "^8.7.4"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
+  "files": [
+    "index.html",
+    "styles.css",
+    "app.js",
+    "manifest.json",
+    "sw.js",
+    "README.md"
+  ]
+} 

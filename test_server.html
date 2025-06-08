@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Monitor Test - Debug Version</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: #fff; 
+            padding: 20px;
+        }
+        .debug-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .module-card {
+            background: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #30d158;
+        }
+        button {
+            background: #30d158;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #28a745; }
+        .log { 
+            background: #000; 
+            padding: 10px; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            max-height: 300px; 
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚛 Fleet Monitor Debug Console</h1>
+    
+    <div class="debug-panel">
+        <h3>MQTT Connection Status</h3>
+        <div id="connectionStatus">Не подключен</div>
+        <button onclick="connectMQTT()">Подключиться к MQTT</button>
+        <button onclick="clearLog()">Очистить лог</button>
+    </div>
+    
+    <div class="debug-panel">
+        <h3>Модули в системе: <span id="moduleCount">0</span></h3>
+        <div id="modulesList"></div>
+    </div>
+    
+    <div class="debug-panel">
+        <h3>Отладочный лог</h3>
+        <div id="debugLog" class="log"></div>
+    </div>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        let client = null;
+        let modules = {};
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('ru-RU');
+            const logDiv = document.getElementById('debugLog');
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        function updateConnectionStatus(status) {
+            document.getElementById('connectionStatus').textContent = status;
+        }
+
+        function updateModulesDisplay() {
+            const modulesList = document.getElementById('modulesList');
+            const moduleCount = document.getElementById('moduleCount');
+            
+            const moduleArray = Object.values(modules);
+            moduleCount.textContent = moduleArray.length;
+            
+            if (moduleArray.length === 0) {
+                modulesList.innerHTML = '<div>Нет подключенных модулей</div>';
+                return;
+            }
+            
+            modulesList.innerHTML = '';
+            moduleArray.forEach(module => {
+                const div = document.createElement('div');
+                div.className = 'module-card';
+                div.innerHTML = `
+                    <strong>${module.id}</strong><br>
+                    Последние данные: ${new Date(module.lastSeen).toLocaleTimeString('ru-RU')}<br>
+                    ${module.location ? `GPS: ${module.location.latitude.toFixed(4)}, ${module.location.longitude.toFixed(4)}` : 'GPS: нет данных'}<br>
+                    ${module.speed ? `Скорость: ${module.speed} км/ч` : ''}<br>
+                    ${module.battery ? `Батарея: ${module.battery}%` : ''}
+                `;
+                modulesList.appendChild(div);
+            });
+        }
+
+        function connectMQTT() {
+            if (client) {
+                client.end();
+            }
+
+            const server = 'broker.hivemq.com';
+            const port = 8000;
+            const clientId = 'fleet_debug_' + Math.random().toString(16).substr(2, 8);
+
+            log(`Подключение к ${server}:${port}...`);
+            updateConnectionStatus('Подключение...');
+
+            try {
+                client = mqtt.connect(`ws://${server}:${port}/mqtt`, {
+                    clientId: clientId,
+                    clean: true,
+                    connectTimeout: 30000,
+                    reconnectPeriod: 5000
+                });
+
+                client.on('connect', () => {
+                    log('✅ Подключен к MQTT брокеру');
+                    updateConnectionStatus('Подключен');
+                    
+                    // Подписка на все топики автомобилей
+                    const topics = ['car/+/data', 'car/+/status', 'car/+/location'];
+                    topics.forEach(topic => {
+                        client.subscribe(topic, (err) => {
+                            if (err) {
+                                log(`❌ Ошибка подписки на ${topic}: ${err.message}`);
+                            } else {
+                                log(`📡 Подписка на ${topic} успешна`);
+                            }
+                        });
+                    });
+                });
+
+                client.on('message', (topic, message) => {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        const deviceId = data.device_id || extractDeviceIdFromTopic(topic);
+                        
+                        log(`📨 Сообщение от ${deviceId}: ${topic}`);
+                        
+                        // Обновление или создание модуля
+                        if (!modules[deviceId]) {
+                            modules[deviceId] = {
+                                id: deviceId,
+                                lastSeen: new Date(),
+                                cloudServer: 'HiveMQ'
+                            };
+                            log(`🆕 Новый модуль: ${deviceId}`);
+                        }
+                        
+                        // Обновление данных модуля
+                        modules[deviceId].lastSeen = new Date();
+                        
+                        if (topic.includes('/data')) {
+                            modules[deviceId].speed = data.speed;
+                            modules[deviceId].battery = data.battery;
+                            modules[deviceId].temperature = data.temperature;
+                            modules[deviceId].rpm = data.rpm;
+                            
+                            if (data.latitude && data.longitude) {
+                                modules[deviceId].location = {
+                                    latitude: data.latitude,
+                                    longitude: data.longitude,
+                                    lastUpdate: new Date()
+                                };
+                            }
+                        }
+                        
+                        if (topic.includes('/location')) {
+                            modules[deviceId].location = {
+                                latitude: data.latitude,
+                                longitude: data.longitude,
+                                lastUpdate: new Date()
+                            };
+                        }
+                        
+                        updateModulesDisplay();
+                        
+                    } catch (error) {
+                        log(`❌ Ошибка парсинга сообщения: ${error.message}`);
+                        log(`Raw message: ${message.toString()}`);
+                    }
+                });
+
+                client.on('error', (error) => {
+                    log(`❌ Ошибка MQTT: ${error.message}`);
+                    updateConnectionStatus('Ошибка');
+                });
+
+                client.on('close', () => {
+                    log('🔌 MQTT соединение закрыто');
+                    updateConnectionStatus('Отключен');
+                });
+
+                client.on('offline', () => {
+                    log('📡 MQTT офлайн');
+                    updateConnectionStatus('Офлайн');
+                });
+
+            } catch (error) {
+                log(`❌ Ошибка подключения: ${error.message}`);
+                updateConnectionStatus('Ошибка');
+            }
+        }
+
+        function extractDeviceIdFromTopic(topic) {
+            const parts = topic.split('/');
+            return parts[1] || 'unknown';
+        }
+
+        // Автоподключение через 2 секунды
+        setTimeout(() => {
+            log('🚀 Автоматическое подключение...');
+            connectMQTT();
+        }, 2000);
+    </script>
+</body>
+</html> 
