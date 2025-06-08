@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Monitor Pro - Advanced Vehicle Tracking v2.1</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#30d158">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Advanced Fleet Monitor Pro for ESP32 vehicles with real-time tracking, analytics, and authentication">
+    <meta name="keywords" content="mqtt, esp32, iot, fleet, monitoring, real-time, tracking, analytics, authentication">
+    <meta name="author" content="iForza">
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚛</text></svg>">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="app-loading" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-icon">🚛</div>
+            <div class="loading-text">Fleet Monitor Pro</div>
+            <div class="loading-subtitle">Initializing advanced monitoring...</div>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">🚛</div>
+                <h1 class="login-title">Fleet Monitor Pro</h1>
+                <p class="login-subtitle">Secure Vehicle Tracking Platform</p>
+            </div>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-input" placeholder="Enter username" autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="Enter password" autocomplete="current-password">
+                </div>
+                
+                <button class="login-btn" onclick="handleLogin()">
+                    <span class="login-btn-text">Login</span>
+                    <span class="login-btn-spinner" style="display: none;">⟳</span>
+                </button>
+                
+                <div class="demo-credentials">
+                    <p>Demo Credentials:</p>
+                    <p><strong>Username:</strong> admin</p>
+                    <p><strong>Password:</strong> fleet2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-left">
+                <div class="app-logo">🚛 Fleet Monitor Pro</div>
+                <div class="nav-links">
+                    <button class="nav-link active" onclick="switchTab('dashboard')">Dashboard</button>
+                    <button class="nav-link" onclick="switchTab('analytics')">Analytics</button>
+                    <button class="nav-link" onclick="switchTab('settings')">Settings</button>
+                </div>
+            </div>
+            
+            <div class="nav-right">
+                <div class="user-info">
+                    <span class="user-name" id="currentUser">Admin</span>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="connection-status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <div class="status-text" id="statusText">Disconnected</div>
+                    </div>
+                </div>
+
+                <div class="server-config-btn" onclick="openServerModal()">
+                    <div class="config-btn-content">
+                        <div>
+                            <div class="config-btn-text">⚙️ Server Configuration</div>
+                            <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 2px;" id="currentServerName">Not connected</div>
+                        </div>
+                        <div class="config-btn-icon">📶</div>
+                    </div>
+                </div>
+
+                <div class="modules-section">
+                    <div class="section-title">
+                        <span>Active Modules</span>
+                        <span class="module-count" id="moduleCount">0</span>
+                    </div>
+                    <div id="modulesList"></div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="loader" id="mapLoader"></div>
+                
+                <div class="map-controls">
+                    <button class="map-control-btn" onclick="centerMap()" title="Center Map">🎯</button>
+                    <div class="map-layer-selector">
+                        <select id="layerSelector" class="layer-select" onchange="changeMapLayer()" title="Select Map Layer">
+                            <option value="osm-dark">🌑 OSM Dark</option>
+                            <option value="osm-light">🌕 OSM Light</option>
+                            <option value="esri-satellite">🛰️ Esri Satellite</option>
+                            <option value="esri-hybrid">🗺️ Esri Hybrid</option>
+                        </select>
+                    </div>
+                    <button class="map-control-btn" onclick="fullscreenMap()" title="Fullscreen">⛶</button>
+                </div>
+
+                <div class="map-info-header" id="mapInfoHeader">
+                    <div class="info-header-grid">
+                        <div class="info-header-item">
+                            <div class="info-header-value" id="totalModules">0</div>
+                            <div class="info-header-label">Modules</div>
+                        </div>
+                        <div class="info-header-item">
+                            <div class="info-header-value" id="onlineModules">0</div>
+                            <div class="info-header-label">Online</div>
+                        </div>
+                        <div class="info-header-item">
+                            <div class="info-header-value" id="avgSpeed">0</div>
+                            <div class="info-header-label">Avg Speed</div>
+                        </div>
+                        <div class="info-header-item">
+                            <div class="info-header-value" id="lastUpdate">---</div>
+                            <div class="info-header-label">Last Update</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content">
+            <div class="analytics-container">
+                <div class="analytics-header">
+                    <h2>Vehicle Analytics</h2>
+                    <div class="time-filter">
+                        <select id="timeRange" onchange="updateCharts()" class="time-select">
+                            <option value="1h">Last Hour</option>
+                            <option value="24h" selected>Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Engine Metrics</h3>
+                            <button class="chart-expand" onclick="expandChart('engineChart')">⛶</button>
+                        </div>
+                        <canvas id="engineChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Speed & Movement</h3>
+                            <button class="chart-expand" onclick="expandChart('speedChart')">⛶</button>
+                        </div>
+                        <canvas id="speedChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>System Health</h3>
+                            <button class="chart-expand" onclick="expandChart('systemChart')">⛶</button>
+                        </div>
+                        <canvas id="systemChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>GPS Accuracy</h3>
+                            <button class="chart-expand" onclick="expandChart('gpsChart')">⛶</button>
+                        </div>
+                        <canvas id="gpsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content">
+            <div class="settings-container">
+                <h2>Fleet Settings</h2>
+                
+                <div class="settings-section">
+                    <h3>Authentication</h3>
+                    <div class="setting-item">
+                        <label>Auto-logout after inactivity</label>
+                        <select id="autoLogout" class="setting-select">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="0">Never</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Map Settings</h3>
+                    <div class="setting-item">
+                        <label>Default map layer</label>
+                        <select id="defaultLayer" class="setting-select">
+                            <option value="osm-dark">OSM Dark</option>
+                            <option value="osm-light">OSM Light</option>
+                            <option value="esri-satellite" selected>Esri Satellite</option>
+                            <option value="esri-hybrid">Esri Hybrid</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Data Retention</h3>
+                    <div class="setting-item">
+                        <label>Analytics data history</label>
+                        <select id="dataRetention" class="setting-select">
+                            <option value="24h">24 Hours</option>
+                            <option value="7d">7 Days</option>
+                            <option value="30d" selected>30 Days</option>
+                            <option value="90d">90 Days</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Expansion Modal -->
+    <div class="chart-modal" id="chartModal">
+        <div class="chart-modal-content">
+            <div class="chart-modal-header">
+                <h3 id="chartModalTitle">Chart</h3>
+                <button class="chart-modal-close" onclick="closeChartModal()">✕</button>
+            </div>
+            <div class="chart-modal-body">
+                <canvas id="expandedChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Configuration Modal -->
+    <div class="modal" id="serverModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🌐 Server Configuration</div>
+                <button class="modal-close" onclick="closeServerModal()">✕</button>
+            </div>
+            
+            <div class="section-title">Cloud Server</div>
+            <div class="server-grid">
+                <button class="server-btn" data-server="hivemq" onclick="selectServer('hivemq')">HiveMQ Public</button>
+                <button class="server-btn" data-server="mosquitto" onclick="selectServer('mosquitto')">Eclipse Mosquitto</button>
+                <button class="server-btn" data-server="emqx" onclick="selectServer('emqx')">EMQX Public</button>
+                <button class="server-btn" data-server="shiftr" onclick="selectServer('shiftr')">Shiftr.io Public</button>
+            </div>
+            
+            <div class="user-id-section">
+                <div class="section-title">User ID</div>
+                <input type="text" id="userIdInput" class="user-input" placeholder="user_123" value="user_123">
+                <button class="update-btn" onclick="updateUserId()">🔄 Update User ID</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Chart Modal -->
+    <div class="modal" id="moduleChartModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <div class="modal-title" id="moduleChartTitle">Module Analytics</div>
+                <button class="modal-close" onclick="closeModuleChartModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <canvas id="moduleChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+    
+    <!-- PWA Install Prompt -->
+    <div class="install-prompt" id="installPrompt" style="display: none;">
+        <div class="install-content">
+            <div class="install-icon">📱</div>
+            <div class="install-text">Install Fleet Monitor Pro</div>
+            <div class="install-subtitle">Advanced fleet management anywhere</div>
+            <div class="install-buttons">
+                <button class="install-btn" onclick="installPWA()">Install</button>
+                <button class="install-btn secondary" onclick="dismissInstall()">Later</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html> 
