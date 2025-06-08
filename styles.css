@@ -2229,4 +2229,140 @@ body {
             opacity: 0;
         }
     }
+}
+
+/* Mobile Device Optimizations */
+.mobile-device {
+    --animation-duration: 0.2s;
+}
+
+.mobile-device * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.mobile-device input,
+.mobile-device textarea,
+.mobile-device select {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* Slow Connection Optimizations */
+.slow-connection .loading-spinner {
+    animation-duration: 2s;
+}
+
+.slow-connection .chart-container {
+    min-height: 200px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slow-connection .chart-container::before {
+    content: "Loading chart...";
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Timeout Error Handling */
+.connection-error {
+    background: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin: 16px 0;
+    text-align: center;
+}
+
+.connection-error-icon {
+    font-size: 2rem;
+    color: var(--accent-red);
+    margin-bottom: 8px;
+}
+
+.connection-error-text {
+    color: var(--accent-red);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.connection-error-hint {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Retry Button */
+.retry-btn {
+    background: var(--accent-red);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: background 0.2s ease;
+}
+
+.retry-btn:hover {
+    background: #d70015;
+}
+
+/* Preloader for slow connections */
+.resource-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.resource-loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(64, 224, 208, 0.2), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Hamburger Menu Mobile Optimizations */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .modules-sidebar.mobile-open {
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .map-container-wrapper {
+        touch-action: pan-x pan-y;
+    }
+}
+
+/* Performance optimizations for mobile */
+.mobile-device .chart-container canvas {
+    will-change: transform;
+}
+
+.mobile-device .custom-marker {
+    will-change: transform;
+}
+
+.mobile-device .modules-sidebar {
+    will-change: transform;
 } 

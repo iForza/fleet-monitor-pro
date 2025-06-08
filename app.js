@@ -1,3 +1,7 @@
+// Mobile optimization and timeout handling
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isSlowConnection = navigator.connection && (navigator.connection.effectiveType === 'slow-2g' || navigator.connection.effectiveType === '2g');
+
 // Global Variables
 let client = null;
 let map = null;
@@ -64,6 +68,22 @@ Chart.defaults.borderColor = '#40e0d0';
 
 // Initialization
 window.addEventListener('load', function() {
+    console.log('🚀 Fleet Monitor Pro v2.3.1 loading...');
+    console.log('📱 Mobile device:', isMobile);
+    console.log('🐌 Slow connection:', isSlowConnection);
+    
+    // Mobile optimizations
+    if (isMobile) {
+        document.body.classList.add('mobile-device');
+        // Reduce animation duration on mobile
+        document.documentElement.style.setProperty('--animation-duration', '0.2s');
+    }
+    
+    if (isSlowConnection) {
+        document.body.classList.add('slow-connection');
+        console.log('⚠️ Slow connection detected, enabling optimizations');
+    }
+    
     hideLoadingScreen();
     checkAuthentication();
     setupEventListeners();

@@ -1,5 +1,5 @@
-const CACHE_NAME = 'fleet-monitor-pro-v2.3.0';
-const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.0';
+const CACHE_NAME = 'fleet-monitor-pro-v2.3.1';
+const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.1';
 
 // Static files to cache
 const STATIC_FILES = [
@@ -176,15 +176,17 @@ self.addEventListener('notificationclick', (event) => {
     }
 });
 
-// Cache strategies
+// Cache strategies with mobile timeout handling
 function cacheFirstStrategy(request) {
     return caches.match(request)
         .then((response) => {
             if (response) {
+                console.log('SW: Serving from cache:', request.url);
                 return response;
             }
             
-            return fetch(request)
+            // Add timeout for mobile connections
+            return fetchWithTimeout(request, 10000) // 10 second timeout
                 .then((networkResponse) => {
                     if (networkResponse.ok) {
                         const responseClone = networkResponse.clone();
@@ -193,18 +195,19 @@ function cacheFirstStrategy(request) {
                     }
                     return networkResponse;
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.warn('SW: Network request failed:', error);
                     // Return offline page for HTML requests
-                    if (request.headers.get('accept').includes('text/html')) {
+                    if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
                         return createOfflinePage();
                     }
-                    throw new Error('Network request failed');
+                    throw new Error('Network request failed: ' + error.message);
                 });
         });
 }
 
 function networkFirstStrategy(request) {
-    return fetch(request)
+    return fetchWithTimeout(request, 8000) // 8 second timeout for API calls
         .then((response) => {
             if (response.ok) {
                 const responseClone = response.clone();
@@ -213,7 +216,8 @@ function networkFirstStrategy(request) {
             }
             return response;
         })
-        .catch(() => {
+        .catch((error) => {
+            console.warn('SW: Network first failed, trying cache:', error);
             return caches.match(request);
         });
 }
@@ -221,7 +225,7 @@ function networkFirstStrategy(request) {
 function staleWhileRevalidateStrategy(request) {
     return caches.match(request)
         .then((cachedResponse) => {
-            const fetchPromise = fetch(request)
+            const fetchPromise = fetchWithTimeout(request, 6000) // 6 second timeout
                 .then((networkResponse) => {
                     if (networkResponse.ok) {
                         const responseClone = networkResponse.clone();
@@ -229,6 +233,10 @@ function staleWhileRevalidateStrategy(request) {
                             .then((cache) => cache.put(request, responseClone));
                     }
                     return networkResponse;
+                })
+                .catch((error) => {
+                    console.warn('SW: Stale while revalidate failed:', error);
+                    return cachedResponse;
                 });
             
             return cachedResponse || fetchPromise;
@@ -242,7 +250,7 @@ function mapTileStrategy(request) {
                 return response;
             }
             
-            return fetch(request)
+            return fetchWithTimeout(request, 5000) // 5 second timeout for map tiles
                 .then((networkResponse) => {
                     if (networkResponse.ok) {
                         const responseClone = networkResponse.clone();
@@ -259,7 +267,8 @@ function mapTileStrategy(request) {
                     }
                     return networkResponse;
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.warn('SW: Map tile failed:', error);
                     // Return placeholder tile for offline
                     return createPlaceholderTile();
                 });
@@ -416,5 +425,24 @@ setInterval(() => {
             });
         });
 }, 60000); // Run every minute
+
+// Fetch with timeout for mobile connections
+function fetchWithTimeout(request, timeout = 10000) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error(`Request timeout after ${timeout}ms`));
+        }, timeout);
+        
+        fetch(request)
+            .then((response) => {
+                clearTimeout(timeoutId);
+                resolve(response);
+            })
+            .catch((error) => {
+                clearTimeout(timeoutId);
+                reject(error);
+            });
+    });
+}
 
 console.log('SW: Fleet Monitor Pro Service Worker loaded successfully'); 
