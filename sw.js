@@ -1,5 +1,5 @@
-const CACHE_NAME = 'fleet-monitor-pro-v2.3.1';
-const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.1';
+const CACHE_NAME = 'fleet-monitor-pro-v2.3.2';
+const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.2';
 
 // Static files to cache
 const STATIC_FILES = [
@@ -11,7 +11,8 @@ const STATIC_FILES = [
     'https://unpkg.com/mqtt/dist/mqtt.min.js',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+    'https://cdn.jsdelivr.net/npm/chart.js',
+    'https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js'
 ];
 
 // Map tiles to cache (limited set for offline use)
@@ -22,18 +23,29 @@ const MAP_TILES_TO_CACHE = [
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/2/2/2'
 ];
 
+// Force cache busting for mobile devices
+const FORCE_UPDATE_TIMESTAMP = '2025-01-09-12-00-00';
+
 // Install event - cache static files
 self.addEventListener('install', (event) => {
-    console.log('SW: Installing...');
+    console.log('SW: Installing v2.3.2 with mobile cache fix...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('SW: Caching static files');
-                return cache.addAll(STATIC_FILES);
+                console.log('SW: Caching static files with forced timestamp');
+                // Add timestamp to cache keys for mobile cache busting
+                const cachePromises = STATIC_FILES.map(url => {
+                    const cacheUrl = url.includes('http') ? url : `${url}?v=${FORCE_UPDATE_TIMESTAMP}`;
+                    return cache.add(cacheUrl).catch(err => {
+                        console.warn(`SW: Failed to cache ${url}:`, err);
+                        return cache.add(url); // Fallback to original URL
+                    });
+                });
+                return Promise.all(cachePromises);
             })
             .then(() => {
-                console.log('SW: Static files cached successfully');
+                console.log('SW: Static files cached successfully with mobile fix');
                 return self.skipWaiting(); // Activate immediately
             })
             .catch((error) => {

@@ -1,7 +1,7 @@
 {
   "name": "fleet-monitor-pro",
-  "version": "2.3.1",
-  "description": "Advanced Fleet Monitor Pro for ESP32 vehicles with real-time tracking, analytics, and authentication",
+  "version": "2.3.2",
+  "description": "Professional Fleet Monitoring System with Real-time GPS tracking, Analytics, and Mobile Support",
   "main": "index.html",
   "scripts": {
     "start": "npm run serve",

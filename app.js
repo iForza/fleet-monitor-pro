@@ -913,50 +913,19 @@ function sendModuleCommand(moduleId, command) {
 
 // Analytics Functions - NEW 2x2 LAYOUT
 function initializeCharts() {
+    console.log('📊 Initializing all charts...');
+    
+    // Регистрируем плагин zoom
+    Chart.register(window.zoomPlugin);
+    
     createSpeedChart();
     createTemperatureChart();
     createRpmChart();
     createBatteryChart();
 }
 
-function createRpmChart() {
-    const ctx = document.getElementById('rpmChart');
-    if (!ctx) return;
-    
-    charts.rpm = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: []
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' },
-                    title: { display: true, text: 'RPM', color: '#a0a0a0' }
-                },
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' }
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: { color: '#a0a0a0' }
-                }
-            }
-        }
-    });
-}
-
 function createTemperatureChart() {
-    const ctx = document.getElementById('temperatureChart');
-    if (!ctx) return;
-    
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
     charts.temperature = new Chart(ctx, {
         type: 'line',
         data: {
@@ -966,31 +935,71 @@ function createTemperatureChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' },
-                    title: { display: true, text: 'Temperature (°C)', color: '#a0a0a0' }
-                },
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' }
-                }
-            },
             plugins: {
-                legend: {
-                    labels: { color: '#a0a0a0' }
-                }
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true, speed: 0.1 },
+                        pinch: { enabled: true },
+                        drag: { enabled: true, backgroundColor: 'rgba(128, 128, 128, 0.3)' },
+                        mode: 'x'
+                    },
+                    pan: { enabled: true, mode: 'x', threshold: 10 },
+                    limits: { y: {min: 0, max: 'original'}, x: {min: 'original', max: 'original'} }
+                },
+                legend: { display: true, position: 'top' },
+                title: { display: true, text: 'Temperature (°C) - Wheel to zoom, drag to pan, double-click to reset' }
+            },
+            scales: {
+                x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
+                y: { title: { display: true, text: 'Temperature (°C)' }, min: 0 }
             }
         }
+    });
+    
+    document.getElementById('temperatureChart').addEventListener('dblclick', function() {
+        charts.temperature.resetZoom();
+    });
+}
+
+function createRpmChart() {
+    const ctx = document.getElementById('rpmChart').getContext('2d');
+    charts.rpm = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true, speed: 0.1 },
+                        pinch: { enabled: true },
+                        drag: { enabled: true, backgroundColor: 'rgba(128, 128, 128, 0.3)' },
+                        mode: 'x'
+                    },
+                    pan: { enabled: true, mode: 'x', threshold: 10 },
+                    limits: { y: {min: 0, max: 'original'}, x: {min: 'original', max: 'original'} }
+                },
+                legend: { display: true, position: 'top' },
+                title: { display: true, text: 'RPM - Wheel to zoom, drag to pan, double-click to reset' }
+            },
+            scales: {
+                x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
+                y: { title: { display: true, text: 'RPM' }, min: 0 }
+            }
+        }
+    });
+    
+    document.getElementById('rpmChart').addEventListener('dblclick', function() {
+        charts.rpm.resetZoom();
     });
 }
 
 function createBatteryChart() {
-    const ctx = document.getElementById('batteryChart');
-    if (!ctx) return;
-    
+    const ctx = document.getElementById('batteryChart').getContext('2d');
     charts.battery = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1000,32 +1009,34 @@ function createBatteryChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    min: 0,
-                    max: 100,
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' },
-                    title: { display: true, text: 'Battery (%)', color: '#a0a0a0' }
-                },
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' }
-                }
-            },
             plugins: {
-                legend: {
-                    labels: { color: '#a0a0a0' }
-                }
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true, speed: 0.1 },
+                        pinch: { enabled: true },
+                        drag: { enabled: true, backgroundColor: 'rgba(128, 128, 128, 0.3)' },
+                        mode: 'x'
+                    },
+                    pan: { enabled: true, mode: 'x', threshold: 10 },
+                    limits: { y: {min: 0, max: 100}, x: {min: 'original', max: 'original'} }
+                },
+                legend: { display: true, position: 'top' },
+                title: { display: true, text: 'Battery (%) - Wheel to zoom, drag to pan, double-click to reset' }
+            },
+            scales: {
+                x: { type: 'time', time: { unit: 'minute' }, title: { display: true, text: 'Time' } },
+                y: { title: { display: true, text: 'Battery (%)' }, min: 0, max: 100 }
             }
         }
+    });
+    
+    document.getElementById('batteryChart').addEventListener('dblclick', function() {
+        charts.battery.resetZoom();
     });
 }
 
 function createSpeedChart() {
-    const ctx = document.getElementById('speedChart');
-    if (!ctx) return;
-    
+    const ctx = document.getElementById('speedChart').getContext('2d');
     charts.speed = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1035,24 +1046,73 @@ function createSpeedChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' },
-                    title: { display: true, text: 'Speed (km/h)', color: '#a0a0a0' }
+            plugins: {
+                zoom: {
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            speed: 0.1
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        drag: {
+                            enabled: true,
+                            backgroundColor: 'rgba(128, 128, 128, 0.3)'
+                        },
+                        mode: 'x',
+                        onZoomComplete: function({chart}) {
+                            console.log('📊 Speed chart zoomed');
+                        }
+                    },
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                        threshold: 10,
+                        onPanComplete: function({chart}) {
+                            console.log('📊 Speed chart panned');
+                        }
+                    },
+                    limits: {
+                        y: {min: 0, max: 'original'},
+                        x: {min: 'original', max: 'original'}
+                    }
                 },
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    ticks: { color: '#a0a0a0' }
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                    display: true,
+                    text: 'Speed (km/h) - Wheel to zoom, drag to pan, double-click to reset'
                 }
             },
-            plugins: {
-                legend: {
-                    labels: { color: '#a0a0a0' }
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'minute'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Speed (km/h)'
+                    },
+                    min: 0
                 }
             }
         }
+    });
+    
+    // Добавляем событие двойного клика для сброса зума
+    document.getElementById('speedChart').addEventListener('dblclick', function() {
+        charts.speed.resetZoom();
+        console.log('📊 Speed chart zoom reset');
     });
 }
 
@@ -1069,8 +1129,75 @@ function updateChartsDisplay() {
 
 // Устаревшая функция для демонстрации (оставляем для совместимости)
 function updateCharts() {
-    console.log('⚠️ Using deprecated updateCharts() - switching to real data display');
+    console.log('📊 Updating charts with time range filter...');
+    
+    // Получаем выбранный временной диапазон
+    const timeRangeElement = document.getElementById('timeRange');
+    const timeRange = timeRangeElement ? timeRangeElement.value : '24h';
+    
+    console.log(`⏰ Selected time range: ${timeRange}`);
+    
+    // Применяем фильтр времени к данным
+    applyTimeRangeFilter(timeRange);
+    
+    // Обновляем отображение графиков
     updateChartsDisplay();
+}
+
+// Новая функция для применения временного фильтра
+function applyTimeRangeFilter(timeRange) {
+    console.log(`🕒 Applying time range filter: ${timeRange}`);
+    
+    const now = new Date();
+    let startTime;
+    
+    // Определяем начальное время на основе выбранного диапазона
+    switch(timeRange) {
+        case '1h':
+            startTime = new Date(now.getTime() - (1 * 60 * 60 * 1000)); // 1 час назад
+            break;
+        case '6h':
+            startTime = new Date(now.getTime() - (6 * 60 * 60 * 1000)); // 6 часов назад
+            break;
+        case '12h':
+            startTime = new Date(now.getTime() - (12 * 60 * 60 * 1000)); // 12 часов назад
+            break;
+        case '24h':
+        default:
+            startTime = new Date(now.getTime() - (24 * 60 * 60 * 1000)); // 24 часа назад
+            break;
+        case '7d':
+            startTime = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 дней назад
+            break;
+        case '30d':
+            startTime = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 дней назад
+            break;
+    }
+    
+    console.log(`📅 Filtering data from ${startTime.toISOString()} to ${now.toISOString()}`);
+    
+    // Фильтруем данные для каждого модуля
+    Object.keys(moduleRealTimeData).forEach(moduleId => {
+        const moduleData = moduleRealTimeData[moduleId];
+        
+        // Фильтруем массивы данных по времени
+        const filteredIndices = [];
+        moduleData.timestamps.forEach((timestamp, index) => {
+            const dataTime = new Date(timestamp);
+            if (dataTime >= startTime && dataTime <= now) {
+                filteredIndices.push(index);
+            }
+        });
+        
+        // Создаем отфильтрованные массивы
+        moduleData.filteredSpeed = filteredIndices.map(i => moduleData.speed[i]);
+        moduleData.filteredTemperature = filteredIndices.map(i => moduleData.temperature[i]);
+        moduleData.filteredRpm = filteredIndices.map(i => moduleData.rpm[i]);
+        moduleData.filteredBattery = filteredIndices.map(i => moduleData.battery[i]);
+        moduleData.filteredTimestamps = filteredIndices.map(i => moduleData.timestamps[i]);
+        
+        console.log(`📊 Module ${moduleId}: ${filteredIndices.length} data points after filtering`);
+    });
 }
 
 function updateSpeedChartReal() {
@@ -1084,19 +1211,25 @@ function updateSpeedChartReal() {
         const color = MODULE_COLORS[index % MODULE_COLORS.length];
         const moduleData = moduleRealTimeData[moduleId];
         
-        if (moduleData && moduleData.speed.length > 0) {
-            datasets.push({
-                label: `${moduleId} Speed`,
-                data: moduleData.speed,
-                borderColor: color,
-                backgroundColor: color + '20',
-                tension: 0.4,
-                pointRadius: 2
-            });
+        if (moduleData) {
+            // Используем отфильтрованные данные если они есть, иначе все данные
+            const speedData = moduleData.filteredSpeed || moduleData.speed || [];
+            const timestamps = moduleData.filteredTimestamps || moduleData.timestamps || [];
             
-            // Используем timestamps от последнего модуля (все должны быть синхронизированы)
-            if (moduleData.timestamps.length > commonTimestamps.length) {
-                commonTimestamps = moduleData.timestamps;
+            if (speedData.length > 0) {
+                datasets.push({
+                    label: `${moduleId} Speed`,
+                    data: speedData,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    tension: 0.4,
+                    pointRadius: 2
+                });
+                
+                // Используем timestamps от модуля с наибольшим количеством данных
+                if (timestamps.length > commonTimestamps.length) {
+                    commonTimestamps = timestamps;
+                }
             }
         }
     });
@@ -1115,7 +1248,7 @@ function updateSpeedChartReal() {
     charts.speed.data.labels = commonTimestamps;
     charts.speed.data.datasets = datasets;
     charts.speed.update('none');
-    console.log(`📈 Speed chart updated with ${datasets.length} modules`);
+    console.log(`📈 Speed chart updated with ${datasets.length} modules, ${commonTimestamps.length} data points`);
 }
 
 // Устаревшая функция
@@ -1135,18 +1268,24 @@ function updateTemperatureChartReal() {
         const color = MODULE_COLORS[index % MODULE_COLORS.length];
         const moduleData = moduleRealTimeData[moduleId];
         
-        if (moduleData && moduleData.temperature.length > 0) {
-            datasets.push({
-                label: `${moduleId} Temperature`,
-                data: moduleData.temperature,
-                borderColor: color,
-                backgroundColor: color + '20',
-                tension: 0.4,
-                pointRadius: 2
-            });
+        if (moduleData) {
+            // Используем отфильтрованные данные если они есть, иначе все данные
+            const tempData = moduleData.filteredTemperature || moduleData.temperature || [];
+            const timestamps = moduleData.filteredTimestamps || moduleData.timestamps || [];
             
-            if (moduleData.timestamps.length > commonTimestamps.length) {
-                commonTimestamps = moduleData.timestamps;
+            if (tempData.length > 0) {
+                datasets.push({
+                    label: `${moduleId} Temperature`,
+                    data: tempData,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    tension: 0.4,
+                    pointRadius: 2
+                });
+                
+                if (timestamps.length > commonTimestamps.length) {
+                    commonTimestamps = timestamps;
+                }
             }
         }
     });
@@ -1164,7 +1303,7 @@ function updateTemperatureChartReal() {
     charts.temperature.data.labels = commonTimestamps;
     charts.temperature.data.datasets = datasets;
     charts.temperature.update('none');
-    console.log(`🌡️ Temperature chart updated with ${datasets.length} modules`);
+    console.log(`🌡️ Temperature chart updated with ${datasets.length} modules, ${commonTimestamps.length} data points`);
 }
 
 function updateTemperatureChart(timestamps) {
@@ -1183,18 +1322,24 @@ function updateRpmChartReal() {
         const color = MODULE_COLORS[index % MODULE_COLORS.length];
         const moduleData = moduleRealTimeData[moduleId];
         
-        if (moduleData && moduleData.rpm.length > 0) {
-            datasets.push({
-                label: `${moduleId} RPM`,
-                data: moduleData.rpm,
-                borderColor: color,
-                backgroundColor: color + '20',
-                tension: 0.4,
-                pointRadius: 2
-            });
+        if (moduleData) {
+            // Используем отфильтрованные данные если они есть, иначе все данные
+            const rpmData = moduleData.filteredRpm || moduleData.rpm || [];
+            const timestamps = moduleData.filteredTimestamps || moduleData.timestamps || [];
             
-            if (moduleData.timestamps.length > commonTimestamps.length) {
-                commonTimestamps = moduleData.timestamps;
+            if (rpmData.length > 0) {
+                datasets.push({
+                    label: `${moduleId} RPM`,
+                    data: rpmData,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    tension: 0.4,
+                    pointRadius: 2
+                });
+                
+                if (timestamps.length > commonTimestamps.length) {
+                    commonTimestamps = timestamps;
+                }
             }
         }
     });
@@ -1212,7 +1357,7 @@ function updateRpmChartReal() {
     charts.rpm.data.labels = commonTimestamps;
     charts.rpm.data.datasets = datasets;
     charts.rpm.update('none');
-    console.log(`⚡ RPM chart updated with ${datasets.length} modules`);
+    console.log(`⚡ RPM chart updated with ${datasets.length} modules, ${commonTimestamps.length} data points`);
 }
 
 function updateRpmChart(timestamps) {
@@ -1231,18 +1376,24 @@ function updateBatteryChartReal() {
         const color = MODULE_COLORS[index % MODULE_COLORS.length];
         const moduleData = moduleRealTimeData[moduleId];
         
-        if (moduleData && moduleData.battery.length > 0) {
-            datasets.push({
-                label: `${moduleId} Battery`,
-                data: moduleData.battery,
-                borderColor: color,
-                backgroundColor: color + '20',
-                tension: 0.4,
-                pointRadius: 2
-            });
+        if (moduleData) {
+            // Используем отфильтрованные данные если они есть, иначе все данные
+            const batteryData = moduleData.filteredBattery || moduleData.battery || [];
+            const timestamps = moduleData.filteredTimestamps || moduleData.timestamps || [];
             
-            if (moduleData.timestamps.length > commonTimestamps.length) {
-                commonTimestamps = moduleData.timestamps;
+            if (batteryData.length > 0) {
+                datasets.push({
+                    label: `${moduleId} Battery`,
+                    data: batteryData,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    tension: 0.4,
+                    pointRadius: 2
+                });
+                
+                if (timestamps.length > commonTimestamps.length) {
+                    commonTimestamps = timestamps;
+                }
             }
         }
     });
@@ -1260,7 +1411,7 @@ function updateBatteryChartReal() {
     charts.battery.data.labels = commonTimestamps;
     charts.battery.data.datasets = datasets;
     charts.battery.update('none');
-    console.log(`🔋 Battery chart updated with ${datasets.length} modules`);
+    console.log(`🔋 Battery chart updated with ${datasets.length} modules, ${commonTimestamps.length} data points`);
 }
 
 function updateBatteryChart(timestamps) {
