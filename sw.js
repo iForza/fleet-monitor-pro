@@ -1,5 +1,5 @@
-const CACHE_NAME = 'fleet-monitor-pro-v2.3.2';
-const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.2';
+const CACHE_NAME = 'fleet-monitor-pro-v2.3.2-FIXED';
+const DYNAMIC_CACHE = 'fleet-monitor-dynamic-v2.3.2-FIXED';
 
 // Static files to cache
 const STATIC_FILES = [
@@ -8,9 +8,9 @@ const STATIC_FILES = [
     '/styles.css',
     '/app.js',
     '/manifest.json',
-    'https://unpkg.com/mqtt/dist/mqtt.min.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdn.jsdelivr.net/npm/mqtt@5.5.0/dist/mqtt.min.js',
+    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',
+    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js'
 ];
@@ -24,11 +24,11 @@ const MAP_TILES_TO_CACHE = [
 ];
 
 // Force cache busting for mobile devices
-const FORCE_UPDATE_TIMESTAMP = '2025-01-09-12-00-00';
+const FORCE_UPDATE_TIMESTAMP = '2025-01-09-23-30-00';
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
-    console.log('SW: Installing v2.3.2 with mobile cache fix...');
+    console.log('SW: Installing v2.3.2-FIXED with CDN rollback fix...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
